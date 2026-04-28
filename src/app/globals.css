@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #fbf6ef;
+  --surface: #ffffff;
+  --ink: #1a1411;
+  --muted: #6b6258;
+  --muted-bg: #f1ebe1;
+  --border: #e6ddcf;
+  --primary: #c8442a;
+  --primary-dark: #a43620;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-muted-bg: var(--muted-bg);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-source-serif), Georgia, "Times New Roman", serif;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-source-serif), Georgia, "Times New Roman", serif;
+}
+
+.font-serif {
+  font-family: var(--font-source-serif), Georgia, "Times New Roman", serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1612;
+    --surface: #221d18;
+    --ink: #f5ede0;
+    --muted: #a39a8c;
+    --muted-bg: #2a241e;
+    --border: #3a322a;
+    --primary: #e2674c;
+    --primary-dark: #c8442a;
+  }
+}
