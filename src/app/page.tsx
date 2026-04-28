@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import ArticleCard from "@/components/ArticleCard";
 import type { Article, Category, EngagementStats } from "@/lib/types";
+import { IS_DEMO_MODE_DB } from "@/lib/demo-mode";
+import { getArticles, getEngagement } from "@/lib/mock-store";
+import { getSupabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
@@ -14,25 +16,68 @@ const CATEGORIES: { value: Category | "all"; label: string }[] = [
   { value: "tech", label: "Tech" },
 ];
 
-interface FeedResponse {
-  articles: (Article & { stats: EngagementStats })[];
-}
+const VALID_CATEGORIES: Category[] = [
+  "politics",
+  "culture",
+  "education",
+  "health",
+  "tech",
+];
+
+type FeedItem = Article & { stats: EngagementStats };
 
 async function fetchFeed(
   sort: string,
   category: string | null
-): Promise<FeedResponse["articles"]> {
-  const h = await headers();
-  const host = h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? "http";
-  const base = `${proto}://${host}`;
-  const url = new URL("/api/articles", base);
-  url.searchParams.set("sort", sort);
-  if (category && category !== "all") url.searchParams.set("category", category);
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) return [];
-  const j = (await res.json()) as FeedResponse;
-  return j.articles;
+): Promise<FeedItem[]> {
+  // Resolve articles directly from the data layer. Server Components
+  // should not HTTP-fetch their own API routes — that round-trip can
+  // time out on Vercel and is an anti-pattern.
+  let articles: Article[];
+  if (IS_DEMO_MODE_DB) {
+    articles = getArticles();
+  } else {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from("articles")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) return [];
+    articles = (data as Article[]) ?? [];
+  }
+
+  const cat =
+    category && (VALID_CATEGORIES as string[]).includes(category)
+      ? (category as Category)
+      : null;
+  if (cat) articles = articles.filter((a) => a.category === cat);
+
+  const decorated: FeedItem[] = articles.map((a) => ({
+    ...a,
+    stats: IS_DEMO_MODE_DB
+      ? getEngagement(a.id)
+      : { views: 0, comments: 0, likes: 0 },
+  }));
+
+  if (sort === "trending") {
+    decorated.sort((a, b) => {
+      const score = (x: FeedItem) => {
+        const ageDays =
+          (Date.now() - new Date(x.created_at).getTime()) /
+          (1000 * 60 * 60 * 24);
+        const raw = x.stats.views + 4 * x.stats.comments + 2 * x.stats.likes;
+        return raw / Math.max(1, ageDays + 1);
+      };
+      return score(b) - score(a);
+    });
+  } else {
+    decorated.sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }
+
+  return decorated;
 }
 
 export default async function HomePage({
