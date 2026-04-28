@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Show, SignInButton, UserButton } from "@clerk/nextjs";
+import { Show, UserButton } from "@clerk/nextjs";
 
 export default function Header() {
   return (
@@ -30,7 +30,12 @@ export default function Header() {
 
           <div className="ml-2 flex items-center">
             <Show when="signed-out">
-              <SignInButton mode="modal"><button className="rounded-md bg-[var(--primary)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--primary-dark)] transition-colors">Sign in</button></SignInButton>
+              <Link
+                href="/sign-in"
+                className="rounded-md bg-[var(--primary)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--primary-dark)] transition-colors"
+              >
+                Sign in
+              </Link>
             </Show>
             <Show when="signed-in">
               <UserButton
